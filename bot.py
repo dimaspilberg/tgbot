@@ -19,7 +19,6 @@ from google.oauth2.service_account import Credentials
 import json
 import os
 
-import os
 from aiohttp import web
 
 from datetime import datetime
@@ -434,6 +433,5 @@ async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    import asyncio
     asyncio.run(main())
 

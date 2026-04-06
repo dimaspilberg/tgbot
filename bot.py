@@ -19,6 +19,9 @@ from google.oauth2.service_account import Credentials
 import json
 import os
 
+import os
+from aiohttp import web
+
 from datetime import datetime
 
 scopes = [
@@ -81,6 +84,19 @@ ADMIN_ID = 907769285
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
+
+async def handle(request):
+    return web.Response(text="Bot is running")
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get("/", handle)
+
+    port = int(os.environ.get("PORT", 10000))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
 
 # =========================
 # FSM
@@ -414,8 +430,10 @@ async def broadcast(message: Message, bot: Bot):
 # =========================
 
 async def main():
+    await start_web_server()   # 👈 ВОТ ЭТА СТРОКА
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
+    import asyncio
     asyncio.run(main())
 

@@ -23,6 +23,21 @@ from aiohttp import web
 
 from datetime import datetime
 
+import sqlite3
+
+conn = sqlite3.connect("bot.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    admin_message_id INTEGER
+)
+""")
+
+conn.commit()
+
 scopes = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -384,6 +399,13 @@ async def about(message: Message):
 Записывайся на курс! Буду рад тебя видеть в числе своих учеников❤️"""
     )
 
+# ========================
+# СВЯЗЬ С АДМИНОМ
+# ========================
+
+@dp.message(F.text == "💬 Связь с администратором")
+async def contact_admin(message: Message):
+    await message.answer("Напиши сообщение 👇")
 
 # =========================
 # НАЗАД
@@ -423,7 +445,65 @@ async def broadcast(message: Message, bot: Bot):
             continue
 
     await message.answer(f"Рассылка завершена ✅\nОтправлено: {sent}")
-    
+
+
+# =========================
+# ОТВЕТ АДМИНА
+# ========================= 
+
+@dp.message(F.reply_to_message)
+async def admin_reply(message: Message, bot: Bot):
+    if message.from_user.id != ADMIN_ID:
+        return
+
+    replied_id = message.reply_to_message.message_id
+
+    cursor.execute(
+        "SELECT user_id FROM messages WHERE admin_message_id = ?",
+        (replied_id,)
+    )
+
+    result = cursor.fetchone()
+
+    if not result:
+        await message.answer("Не удалось определить пользователя.")
+        return
+
+    user_id = result[0]
+
+    await bot.send_message(
+        user_id,
+        f"📬 Ответ администратора:\n\n{message.text}"
+    )
+
+
+# =========================
+# СООБЩЕНИЯ
+# =========================    
+
+@dp.message()
+async def forward_to_admin(message: Message, bot: Bot):
+    if message.text and message.text.startswith("/"):
+        return
+
+    user = message.from_user
+
+    text = (
+        "📩 Новое сообщение:\n\n"
+        f"Имя: {user.full_name}\n"
+        f"Username: @{user.username or 'нет'}\n"
+        f"ID: {user.id}\n\n"
+        f"Текст:\n{message.text}"
+    )
+
+    sent = await bot.send_message(ADMIN_ID, text)
+
+    cursor.execute(
+        "INSERT INTO messages (user_id, admin_message_id) VALUES (?, ?)",
+        (user.id, sent.message_id)
+    )
+    conn.commit()
+
 # =========================
 # ЗАПУСК
 # =========================
@@ -434,4 +514,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-

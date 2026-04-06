@@ -78,7 +78,7 @@ async def send_reminder(user_id):
         except:
             pass
 
-TOKEN = "8791835799:AAEHWNk8KWWQgD21xJrs6W_AY8ALr7m6W9Y"
+TOKEN = os.getenv("TOKEN")
 ADMIN_ID = 907769285
 
 bot = Bot(token=TOKEN)

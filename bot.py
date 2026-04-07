@@ -130,6 +130,7 @@ def main_menu():
             [KeyboardButton(text="📖 О курсах")],
             [KeyboardButton(text="📚 Материалы")],
             [KeyboardButton(text="👨‍🏫 Обо мне")],
+            [KeyboardButton(text="💬 Связь с администратором")]
         ],
         resize_keyboard=True
     )

@@ -25,6 +25,7 @@ from datetime import datetime
 
 import sqlite3
 
+
 conn = sqlite3.connect("bot.db")
 cursor = conn.cursor()
 
@@ -36,6 +37,11 @@ CREATE TABLE IF NOT EXISTS messages (
 )
 """)
 
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS support (
+    user_id INTEGER PRIMARY KEY
+)
+""")
 conn.commit()
 
 scopes = [
@@ -131,6 +137,7 @@ def main_menu():
             [KeyboardButton(text="📚 Материалы")],
             [KeyboardButton(text="👨‍🏫 Обо мне")],
             [KeyboardButton(text="💬 Связь с администратором")]
+            [KeyboardButton(text="❌ Выйти из чата")]
         ],
         resize_keyboard=True
     )
@@ -406,11 +413,31 @@ async def about(message: Message):
 
 @dp.message(F.text == "💬 Связь с администратором")
 async def contact_admin(message: Message):
-    await message.answer("Напиши сообщение 👇")
+    user_id = message.from_user.id
+
+    cursor.execute(
+        "INSERT OR IGNORE INTO support (user_id) VALUES (?)",
+        (user_id,)
+    )
+    conn.commit()
+
+    await message.answer("Ты в режиме связи с администратором 💬\n\nНапиши сообщение.")
 
 # =========================
 # НАЗАД
 # =========================
+
+@dp.message(F.text == "❌ Выйти из чата")
+async def exit_chat(message: Message):
+    user_id = message.from_user.id
+
+    cursor.execute(
+        "DELETE FROM support WHERE user_id = ?",
+        (user_id,)
+    )
+    conn.commit()
+
+    await message.answer("Ты вышел из чата 👌", reply_markup=main_menu())
 
 @dp.message(F.text == "⬅️ Назад")
 async def back(message: Message):
@@ -486,6 +513,18 @@ async def admin_reply(message: Message, bot: Bot):
 async def forward_to_admin(message: Message, bot: Bot):
     if message.text and message.text.startswith("/"):
         return
+
+    user_id = message.from_user.id
+
+    # ✅ проверяем, в режиме ли пользователь
+    cursor.execute(
+        "SELECT user_id FROM support WHERE user_id = ?",
+        (user_id,)
+    )
+    result = cursor.fetchone()
+
+    if not result:
+        return  # ❗ если не в режиме — игнорируем
 
     user = message.from_user
 

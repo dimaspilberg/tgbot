@@ -137,6 +137,13 @@ def main_menu():
             [KeyboardButton(text="📚 Материалы")],
             [KeyboardButton(text="👨‍🏫 Обо мне")],
             [KeyboardButton(text="💬 Связь с администратором")]
+        ],
+        resize_keyboard=True
+    )
+
+def support_menu():
+    return ReplyKeyboardMarkup(
+        keyboard=[
             [KeyboardButton(text="❌ Выйти из чата")]
         ],
         resize_keyboard=True
@@ -421,7 +428,10 @@ async def contact_admin(message: Message):
     )
     conn.commit()
 
-    await message.answer("Ты в режиме связи с администратором 💬\n\nНапиши сообщение.")
+    await message.answer(
+    "Ты в режиме связи с администратором 💬\n\nНапиши сообщение.",
+    reply_markup=support_menu()
+)
 
 # =========================
 # НАЗАД
